@@ -2,127 +2,67 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#000">
-<title>Liquid Glass — демо</title>
-<link rel="stylesheet" href="../src/liquid-glass.css?v=20261101b">
-<style>
-  :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; }
-  html { background: #000; } body { margin: 0; min-height: 100%; color: #fff; }
-  #bg { position: fixed; inset: 0; width: 100vw; height: 100lvh; object-fit: cover; z-index: -2; }
-  main { padding: calc(env(safe-area-inset-top) + 80px) 16px calc(env(safe-area-inset-bottom) + 120px); max-width: 680px; margin: 0 auto; }
-  .nav { position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px; height: 52px; border-radius: 26px;
-         display: flex; align-items: center; justify-content: space-between; padding: 0 18px; z-index: 5; font-weight: 600; max-width: 680px; margin: 0 auto; }
-  .nav small { font-weight: 500; opacity: .85; font-size: 12px; }
-  .tabbar { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 12px); left: 50%; transform: translateX(-50%);
-            width: min(92vw, 420px); height: 64px; border-radius: 32px; display: flex; justify-content: space-around; align-items: center; z-index: 5; }
-  .tab { display: grid; place-items: center; font-size: 11px; gap: 2px; opacity: .9; text-shadow: 0 1px 2px rgba(0,0,0,.35); }
-  .tab b { font-size: 20px; }
-  .card { border-radius: 30px; padding: 20px; margin: 18px 0; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
-  .card h2 { margin: 0 0 6px; font-size: 22px; }
-  .card p { margin: 0; opacity: .9; line-height: 1.4; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 18px 0; }
-  .btn { border: 0; color: inherit; font: 600 16px/1 inherit; padding: 16px 26px; border-radius: 999px; cursor: pointer; text-shadow: 0 1px 2px rgba(0,0,0,.4); transition: transform .2s; }
-  .btn:active { transform: scale(.96); }
-  .circle { width: 58px; height: 58px; padding: 0; font-size: 22px; }
-  #lens { position: fixed; width: 170px; height: 170px; border-radius: 50%; left: calc(50% - 85px); top: 45%; z-index: 6;
-          touch-action: none; cursor: grab; display: grid; place-items: center; font-size: 12px; opacity: .95; }
-  #lens:active { cursor: grabbing; }
-  .panel { font-size: 13px; }
-  .panel label { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 8px 0; }
-  .panel input[type=range] { width: 55%; }
-  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
-  .chip { border-radius: 999px; padding: 8px 14px; font-size: 13px; border: 0; color: inherit; }
-  #fps { font-variant-numeric: tabular-nums; }
-  .spacer { height: 40vh; }
-</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Liquid Glass v3 — демо</title>
+<link rel="stylesheet" href="demo.css?v=v3-20261101">
 </head>
 <body>
-<img id="bg" src="assets/bg1.jpg?v=20261101b" alt="" crossorigin="anonymous">
-<div id="lg-defs"></div>
+<img id="wall" class="wall" src="assets/bg1.jpg?v=v3-20261101" alt="">
+<canvas id="wallc" class="wall" hidden></canvas>
+<main id="feed"><canvas id="sheet"></canvas></main>
 
-<header class="nav glass" data-glass='{"radius":26,"bezel":16,"thickness":18}'>
-  <span>Liquid Glass</span><small id="fps">— fps</small><small id="mode">…</small>
-</header>
+<!-- стеклянный UI (над WebGL-слоем) -->
+<header class="topbar g" id="topbar"><b>Liquid Glass</b><small id="fps">—</small></header>
+<button class="circ g top1" id="btnWall" aria-label="Обои">◐</button>
+<button class="circ g top2" id="btnSet" aria-label="Настройки">⚙︎</button>
 
-<main>
-  <section class="card glass" data-glass='{"bezel":26,"thickness":30}'>
-    <h2>Жидкое стекло</h2>
-    <p>Преломление по краям, блик, хроматическая аберрация и лёгкий фрост — в одном фрагментном шейдере. Потяните круглую линзу пальцем.</p>
-  </section>
-
-  <div class="row">
-    <button class="btn glass" data-glass='{"bezel":14,"thickness":16}'>Готово</button>
-    <button class="btn glass" data-glass='{"bezel":14,"thickness":16,"tint":[0.1,0.5,1,0.25]}'>Синий</button>
-    <button class="btn circle glass" data-glass='{"bezel":18,"thickness":20}'>＋</button>
-    <button class="btn circle glass" data-glass='{"bezel":18,"thickness":20}'>♥</button>
-  </div>
-
-  <section class="card glass panel" data-glass='{"bezel":24,"thickness":24,"blur":6}'>
-    <h2>Настройки</h2>
-    <label>Толщина <input id="thickness" type="range" min="0" max="60" value="28"></label>
-    <label>Ободок <input id="bezel" type="range" min="4" max="60" value="22"></label>
-    <label>Размытие <input id="blur" type="range" min="0" max="16" value="2" step="0.5"></label>
-    <label>Аберрация <input id="aberration" type="range" min="0" max="0.5" value="0.12" step="0.01"></label>
-    <label>Блик <input id="specular" type="range" min="0" max="1.5" value="0.55" step="0.05"></label>
-    <label>Энергосбережение <input id="lowpower" type="checkbox"></label>
-    <div class="chips">
-      <button class="chip glass" data-bg="bg1" data-glass='{"bezel":10,"thickness":10}'>Горы</button>
-      <button class="chip glass" data-bg="bg2" data-glass='{"bezel":10,"thickness":10}'>Город</button>
-      <button class="chip glass" data-bg="bg3" data-glass='{"bezel":10,"thickness":10}'>Мост</button>
-      <button class="chip glass" data-bg="bg4" data-glass='{"bezel":10,"thickness":10}'>Собака</button>
-    </div>
-    <p style="margin-top:12px">Режим: <a href="?mode=webgl" style="color:inherit">webgl</a> · <a href="?mode=svg" style="color:inherit">svg</a> · <a href="?mode=css" style="color:inherit">css</a> · <a href="?" style="color:inherit">авто</a> · <a href="dom.html" style="color:inherit">живой DOM</a></p>
-  </section>
-
-  <section class="card glass" data-glass='{}'><h2>Прокрутка</h2><p>Фон фиксирован, карточки едут — стекло перерисовывается только при прокрутке/изменении.</p></section>
-  <div class="spacer"></div>
-  <section class="card glass" data-glass='{}'><h2>Конец</h2><p>Всё.</p></section>
-</main>
-
-<div id="lens" class="glass" data-glass='{"bezel":40,"thickness":46,"blur":0,"aberration":0.18,"specular":0.7,"tint":[1,1,1,0]}'>тяни</div>
-
-<nav class="tabbar glass" data-glass='{"bezel":18,"thickness":20}'>
-  <span class="tab"><b>⌂</b>Главная</span><span class="tab"><b>⌕</b>Поиск</span><span class="tab"><b>♫</b>Музыка</span><span class="tab"><b>☺</b>Профиль</span>
+<div class="mini g" id="mini">
+  <span class="art" id="miniArt"></span>
+  <span class="mt"><b>Жидкое стекло</b><small>Apple Design Team</small></span>
+  <button class="ic" id="play" aria-label="Пауза">❚❚</button><button class="ic" aria-label="Далее">▶▶</button>
+</div>
+<nav class="tabbar g" id="tabbar">
+  <span class="ind" id="ind"></span>
+  <button class="tab on"><i>⌂</i>Главная</button><button class="tab"><i>▦</i>Медиатека</button><button class="tab"><i>◉</i>Радио</button><button class="tab" id="tabCC"><i>☰</i>Пункт</button>
 </nav>
+<button class="circ g search" id="search" aria-label="Поиск">⌕</button>
 
-<script type="module">
-  import { Glass, liquidGlass, setLowPower, perfStats, capabilities } from '../src/liquid-glass.js?v=20261101b';
-  const q = new URLSearchParams(location.search);
-  const forced = q.get('mode') || 'auto';
-  const bg = document.getElementById('bg');
-  const glasses = [...document.querySelectorAll('.glass')].map(el =>
-    new Glass(el, { mode: forced, background: bg, ...JSON.parse(el.dataset.glass || '{}') }));
-  window.__glasses = glasses; window.__perf = perfStats;
-  document.getElementById('mode').textContent = glasses[0].mode + (capabilities().isIOS ? ' · iOS' : '');
+<div id="lens" class="g lens"><span>тяни</span></div>
 
-  // ползунки -> карточки (кроме линзы)
-  for (const id of ['thickness', 'bezel', 'blur', 'aberration', 'specular']) {
-    document.getElementById(id).addEventListener('input', e => {
-      const v = +e.target.value; glasses.filter(g => g.el.classList.contains('card')).forEach(g => g.set({ [id]: v }));
-    });
-  }
-  document.getElementById('lowpower').addEventListener('change', e => setLowPower(e.target.checked));
-  document.querySelectorAll('[data-bg]').forEach(b => b.addEventListener('click', () => {
-    bg.src = `assets/${b.dataset.bg}.jpg?v=20261101b`;
-    bg.onload = () => { bg.__lgDirty = true; glasses.forEach(g => g.invalidate()); };
-  }));
+<!-- Пункт управления -->
+<section id="cc" class="cc" hidden>
+  <div class="tiles">
+    <div class="tile g conn">
+      <button class="tg on g2">✈︎</button><button class="tg on">⦿</button><button class="tg">≋</button><button class="tg on">ᛒ</button>
+    </div>
+    <div class="tile g music"><span class="art" id="ccArt"></span><b>Жидкое стекло</b><small>Apple Design Team</small>
+      <div class="ctr"><button class="ic">◀◀</button><button class="ic">❚❚</button><button class="ic">▶▶</button></div></div>
+    <div class="tile g sq"><button class="tg on">☾</button><small>Фокус</small></div>
+    <div class="tile g sq"><button class="tg">⟳</button><small>Поворот</small></div>
+    <div class="tile g vs" data-v="0.65"><span class="fill"></span><i>☀︎</i></div>
+    <div class="tile g vs" data-v="0.4"><span class="fill"></span><i>♪</i></div>
+  </div>
+</section>
 
-  // перетаскивание линзы: pointer events, без layout-трэшинга, через transform
-  const lens = document.getElementById('lens'); const lg = glasses.find(g => g.el === lens);
-  let sx = 0, sy = 0, ox = 0, oy = 0, drag = false;
-  lens.addEventListener('pointerdown', e => { drag = true; sx = e.clientX - ox; sy = e.clientY - oy; lens.setPointerCapture(e.pointerId); });
-  lens.addEventListener('pointermove', e => {
-    if (!drag) return;
-    ox = e.clientX - sx; oy = e.clientY - sy;
-    lens.style.transform = `translate3d(${ox}px,${oy}px,0)`;
-    lg.invalidate();
-  });
-  const end = () => { drag = false; }; lens.addEventListener('pointerup', end); lens.addEventListener('pointercancel', end);
+<!-- Настройки -->
+<section id="settings" class="sheet g" hidden>
+  <h3>Настройки стекла <button id="close" class="x">✕</button></h3>
+  <label>Толщина <input data-k="thickness" type="range" min="0" max="60" value="24"></label>
+  <label>Ободок <input data-k="bezel" type="range" min="4" max="60" value="20"></label>
+  <label>Фрост <input data-k="blur" type="range" min="0" max="12" step="0.5" value="1"></label>
+  <label>Слияние <input data-g="merge" type="range" min="0" max="60" value="30"></label>
+  <label>Аберрация <input data-g="aberration" type="range" min="0" max="0.4" step="0.01" value="0.1"></label>
+  <label>Блик <input data-g="specular" type="range" min="0" max="2" step="0.05" value="0.9"></label>
+  <label>Тонировка <input data-g="tint" type="range" min="0" max="0.4" step="0.01" value="0.05"></label>
+  <label>Увеличение <input data-g="magnify" type="range" min="0" max="0.2" step="0.005" value="0.03"></label>
+  <div class="seg" id="light"><button data-l="fixed">Свет: фикс.</button><button data-l="pointer" class="on">указатель</button><button data-l="tilt">наклон</button></div>
+  <label>Энергосбережение <input id="low" type="checkbox"></label>
+  <div class="seg" id="walls"></div>
+  <p class="links">Режим: <b id="mode"></b> · <a href="classic.html">классика (v2)</a> · <a href="dom.html">живой DOM (SVG)</a></p>
+</section>
 
-  // FPS-счётчик (только для демо)
-  const fpsEl = document.getElementById('fps'); let n = 0, t0 = performance.now();
-  (function loop(t) { n++; if (t - t0 > 1000) { fpsEl.textContent = `${Math.round(n * 1000 / (t - t0))} fps · ${perfStats.avgMs.toFixed(2)} ms`; n = 0; t0 = t; } requestAnimationFrame(loop); })(t0);
-</script>
+<script type="module" src="demo.js?v=v3-20261101"></script>
 </body>
 </html>

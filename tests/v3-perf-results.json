@@ -1,0 +1,182 @@
+[
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": false,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.8,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 2
+ },
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": false,
+  "scenario": "прокрутка",
+  "fps": 60,
+  "p95ms": 16.8,
+  "glassDraws": 60,
+  "jsMsPerDraw": 0.93,
+  "cpuPct": 10
+ },
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": false,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60.1,
+  "p95ms": 16.7,
+  "glassDraws": 92,
+  "jsMsPerDraw": 0.67,
+  "cpuPct": 23
+ },
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": true,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.8,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 1
+ },
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": true,
+  "scenario": "прокрутка",
+  "fps": 60,
+  "p95ms": 16.8,
+  "glassDraws": 60,
+  "jsMsPerDraw": 1,
+  "cpuPct": 10
+ },
+ {
+  "device": "iPhone 15 Pro · CPU×4",
+  "lowPower": true,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60.1,
+  "p95ms": 16.7,
+  "glassDraws": 91,
+  "jsMsPerDraw": 0.49,
+  "cpuPct": 14
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": false,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 1
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": false,
+  "scenario": "прокрутка",
+  "fps": 59.6,
+  "p95ms": 16.8,
+  "glassDraws": 60,
+  "jsMsPerDraw": 0.89,
+  "cpuPct": 15
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": false,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60.1,
+  "p95ms": 16.7,
+  "glassDraws": 97,
+  "jsMsPerDraw": 0.59,
+  "cpuPct": 22
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": true,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 1
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": true,
+  "scenario": "прокрутка",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 60,
+  "jsMsPerDraw": 0.79,
+  "cpuPct": 9
+ },
+ {
+  "device": "Pixel 7 · CPU×4",
+  "lowPower": true,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 94,
+  "jsMsPerDraw": 0.55,
+  "cpuPct": 18
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": false,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 1
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": false,
+  "scenario": "прокрутка",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 60,
+  "jsMsPerDraw": 0.11,
+  "cpuPct": 2
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": false,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60.1,
+  "p95ms": 16.8,
+  "glassDraws": 90,
+  "jsMsPerDraw": 0.16,
+  "cpuPct": 3
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": true,
+  "scenario": "покой 2 с",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 0,
+  "jsMsPerDraw": 0,
+  "cpuPct": 1
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": true,
+  "scenario": "прокрутка",
+  "fps": 60,
+  "p95ms": 16.8,
+  "glassDraws": 60,
+  "jsMsPerDraw": 0.12,
+  "cpuPct": 2
+ },
+ {
+  "device": "Desktop 1280×860",
+  "lowPower": true,
+  "scenario": "перетаскивание+слияние",
+  "fps": 60,
+  "p95ms": 16.7,
+  "glassDraws": 89,
+  "jsMsPerDraw": 0.13,
+  "cpuPct": 7
+ }
+]

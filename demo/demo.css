@@ -1,0 +1,72 @@
+:root { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif; -webkit-font-smoothing: antialiased; color-scheme: dark; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { background: #000; }
+body { margin: 0; color: #fff; overscroll-behavior: none; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.wall { position: fixed; left: 0; top: 0; width: 100%; height: 100lvh; object-fit: cover; z-index: 0; display: block; }
+.wall[hidden] { display: none; }
+#feed { position: relative; z-index: 0; max-width: 560px; margin: 0 auto; padding: calc(env(safe-area-inset-top) + 72px) 0 calc(env(safe-area-inset-bottom) + 190px); }
+#sheet { display: block; width: 100%; }
+
+/* стеклянные элементы: фон рисует WebGL-слой, здесь только содержимое */
+.g { position: fixed; z-index: 2; color: #fff; transition: color .35s; user-select: none; -webkit-user-select: none; }
+.g[data-lg-tone="light"] { color: #111; }
+.lg-item--css { background: rgba(255,255,255,.18); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35), 0 8px 24px rgba(0,0,0,.18); }
+.lg-item--css[data-lg-tone="light"] { background: rgba(255,255,255,.45); }
+
+.topbar { top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 128px; height: 50px; border-radius: 25px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; max-width: 420px; }
+.topbar b { white-space: nowrap; }
+.topbar small { font-size: 11px; opacity: .75; font-variant-numeric: tabular-nums; }
+.circ { width: 50px; height: 50px; border-radius: 50%; font-size: 21px; display: grid; place-items: center; }
+.top1 { top: calc(env(safe-area-inset-top) + 10px); right: 70px; }
+.top2 { top: calc(env(safe-area-inset-top) + 10px); right: 12px; }
+
+.tabbar { bottom: calc(env(safe-area-inset-bottom) + 14px); left: 12px; right: 76px; height: 62px; border-radius: 31px; display: flex; padding: 4px; max-width: 480px; }
+.tab { flex: 1; display: grid; place-items: center; font-size: 10px; font-weight: 600; z-index: 1; opacity: .9; }
+.tab i { font-style: normal; font-size: 20px; line-height: 1; margin-bottom: -6px; }
+.tab.on { color: #0a84ff; opacity: 1; }
+.g[data-lg-tone="light"] .tab.on { color: #0060df; }
+.ind { position: absolute; top: 4px; bottom: 4px; left: 4px; border-radius: 27px; background: rgba(255,255,255,.16); z-index: 0; will-change: transform; }
+.g[data-lg-tone="light"] .ind { background: rgba(0,0,0,.07); }
+.search { bottom: calc(env(safe-area-inset-bottom) + 14px); right: 12px; width: 62px; height: 62px; font-size: 26px; }
+
+.mini { bottom: calc(env(safe-area-inset-bottom) + 86px); left: 12px; right: 12px; height: 56px; border-radius: 28px; display: flex; align-items: center; gap: 10px; padding: 0 8px; max-width: 548px; }
+.art { width: 40px; height: 40px; border-radius: 10px; background-size: cover; background-position: center; flex: none; }
+.mt { flex: 1; display: grid; line-height: 1.15; font-size: 14px; } .mt small { opacity: .7; font-size: 12px; }
+.ic { width: 40px; height: 40px; font-size: 15px; letter-spacing: -3px; border-radius: 50%; transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+.ic:active, .tg:active { transform: scale(.85); }
+
+.lens { left: calc(50% - 70px); top: 42%; width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; touch-action: none; cursor: grab; z-index: 3; }
+.lens span { opacity: .8; }
+
+/* Пункт управления */
+.cc { position: fixed; inset: 0; z-index: 2; display: grid; place-items: start center; padding: calc(env(safe-area-inset-top) + 80px) 16px 0; opacity: 1; transition: opacity .3s; }
+.cc[hidden] { display: none; }
+.cc .tiles { position: relative; width: min(100%, 380px); display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: minmax(80px, auto); gap: 14px; }
+.cc .tile { position: relative; border-radius: 30px; padding: 12px; }
+.cc .g { position: relative; }
+.conn { grid-column: span 2; grid-row: span 2; display: grid; grid-template-columns: 1fr 1fr; place-items: center; }
+.tg { width: 58px; height: 58px; border-radius: 50%; font-size: 22px; background: rgba(255,255,255,.14); transition: transform .25s cubic-bezier(.3,1.6,.5,1), background .2s; }
+.tg.on { background: #0a84ff; color: #fff; }
+.music { grid-column: span 2; grid-row: span 2; display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.music .art { width: 54px; height: 54px; border-radius: 12px; margin-bottom: 6px; }
+.music small { opacity: .7; } .ctr { display: flex; justify-content: space-between; margin-top: auto; }
+.sq { grid-column: span 1; display: grid; place-items: center; font-size: 11px; gap: 4px; padding: 8px 4px; }
+.sq .tg { width: 46px; height: 46px; font-size: 18px; }
+.vs { grid-column: span 1; grid-row: span 2; overflow: hidden; padding: 0; touch-action: none; display: flex; align-items: flex-end; justify-content: center; }
+.vs .fill { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,.92); border-radius: 0 0 30px 30px; }
+.vs i { position: relative; font-style: normal; font-size: 22px; padding-bottom: 14px; color: #666; z-index: 1; }
+
+/* Настройки */
+.sheet { left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom) + 14px); max-width: 520px; margin: 0 auto; border-radius: 34px; padding: 14px 20px 18px; font-size: 14px; z-index: 4; max-height: 78vh; overflow: auto; }
+.sheet[hidden] { display: none; }
+.sheet h3 { margin: 4px 0 10px; display: flex; justify-content: space-between; align-items: center; }
+.sheet label { display: flex; justify-content: space-between; align-items: center; margin: 7px 0; gap: 12px; }
+.sheet input[type=range] { width: 58%; accent-color: #0a84ff; }
+.x { width: 32px; height: 32px; border-radius: 50%; background: rgba(127,127,127,.25); }
+.seg { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+.seg button { padding: 7px 12px; border-radius: 999px; background: rgba(127,127,127,.22); font-size: 13px; }
+.seg button.on { background: #0a84ff; color: #fff; }
+.links { font-size: 12px; opacity: .85; } .links a { color: inherit; }
+
+.g[style*="visibility: hidden"] { pointer-events: none; }
