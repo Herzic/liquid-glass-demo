@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Liquid Glass — живой DOM (SVG-режим)</title>
-<link rel="stylesheet" href="../src/liquid-glass.css">
+<link rel="stylesheet" href="../src/liquid-glass.css?v=20261101b">
 <style>
   :root { font-family: -apple-system, system-ui, sans-serif; }
   body { margin: 0; background: #fafafa; color: #111; }
@@ -23,7 +23,7 @@
 <div class="content" id="c"></div>
 <div class="pill glass"><span>Главная</span><span>Поиск</span><span>Ещё</span></div>
 <script type="module">
-  import { liquidGlass } from '../src/liquid-glass.js';
+  import { liquidGlass } from '../src/liquid-glass.js?v=20261101b';
   const c = document.getElementById('c');
   const colors = ['#ff3b30','#ff9500','#ffcc00','#34c759','#00c7be','#007aff','#5856d6','#af52de','#ff2d55'];
   c.innerHTML = `<p class="note">Стекло преломляет настоящую страницу. В Chromium — SVG feDisplacementMap внутри backdrop-filter; в Safari/Firefox — размытие (fallback).</p>` +

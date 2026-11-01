@@ -139,12 +139,12 @@ uniform vec2  uLight;     // направление света
 uniform vec2  uTexSize;
 
 float sdRR(vec2 p, vec2 b, float r){ vec2 q = abs(p)-b+r; return min(max(q.x,q.y),0.)+length(max(q,0.))-r; }
-float surf(float t){ return pow(1.-pow(1.-t,4.),.25); }
+float surf(float t){ float u=1.-clamp(t,0.,1.); float a=u*u; return sqrt(sqrt(max(1.-a*a,0.))); }
 float refr(float t){
   float e=.002; t=clamp(t,0.,1.-e);
   float s=(surf(t+e)-surf(t))/e;
-  float th=atan(s); float r=asin(clamp(sin(th)/uIor,-1.,1.));
-  return tan(th-r)*(1.-surf(t)*.5);
+  float th=atan(s); float r=asin(clamp(sin(th)/max(uIor,1.),-1.,1.));
+  return clamp(tan(clamp(th-r,0.,1.5)),0.,8.)*(1.-surf(t)*.5);
 }
 vec3 sat(vec3 c,float s){ float l=dot(c,vec3(.2126,.7152,.0722)); return mix(vec3(l),c,s); }
 vec3 samp(vec2 uv, float lod){
@@ -152,6 +152,7 @@ vec3 samp(vec2 uv, float lod){
   uv = clamp(uv, vec2(0.), vec2(1.));
   if (lod < .01) return texture(uTex, uv).rgb;
   // дешёвый «фрост»: мип-уровень + 4 тапа по диагонали
+  lod = clamp(lod, 0., 8.);
   vec2 px = exp2(lod) / uTexSize;
   vec3 c = textureLod(uTex, uv, lod).rgb*.4;
   c += textureLod(uTex, uv+vec2( px.x, px.y)*.75, lod).rgb*.15;
@@ -170,7 +171,8 @@ void main(){
   if (aa <= 0.) { o = vec4(0.); return; }
   // нормаль из градиента SDF
   vec2 e = vec2(.5,0.);
-  vec2 n = normalize(vec2(sdRR(p+e.xy,hb,r)-sdRR(p-e.xy,hb,r), sdRR(p+e.yx,hb,r)-sdRR(p-e.yx,hb,r))+1e-6);
+  vec2 gr = (vec2(sdRR(p+e.xy,hb,r)-sdRR(p-e.xy,hb,r), sdRR(p+e.yx,hb,r)-sdRR(p-e.yx,hb,r)));
+  vec2 n = dot(gr,gr) > 1e-8 ? normalize(gr) : vec2(0.);
   float t = clamp(-d/uBezel, 0., 1.);
   float off = (t < 1.) ? refr(t) * uThick : 0.;
   vec2 disp = -n * off - p * uMag;                   // px: внутрь + лёгкое увеличение
@@ -184,13 +186,14 @@ void main(){
   col = sat(col, uSat) * uBright;
   col = mix(col, uTint.rgb, uTint.a);
   // блики: ободок, освещённый с направления uLight, и отражённый с противоположной стороны
-  float rim = pow(1.-t, 3.) ;
+  float it=1.-t; float rim = it*it*it;
   float ld = dot(n, normalize(uLight));
-  float spec = rim * (pow(max(ld,0.),2.)*1. + pow(max(-ld,0.),2.)*.55);
+  float lp=max(ld,0.), ln=max(-ld,0.); float spec = rim * (lp*lp + ln*ln*.55);
   float edge = smoothstep(1.6,0.,abs(d+.9))*.35;     // тонкая светлая кромка
   col += (spec + edge) * uSpec;
   // лёгкая внутренняя тень у кромки — объём
   col *= 1. - rim*.08;
+  col = clamp(col, 0., 1.);
   o = vec4(col*aa, aa);
 }`;
 
@@ -216,26 +219,48 @@ class SharedRenderer {
     const n = gl.getProgramParameter(pr, gl.ACTIVE_UNIFORMS);
     for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(pr, i); this.u[a.name] = gl.getUniformLocation(pr, a.name); }
     this.textures = new Map(); // source -> {tex, w, h, version}
+    this.maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE) || 2048;
+    this.copyMode = 'draw';   // 'draw' (drawImage) | 'pixels' (readPixels → putImageData)
     this.lost = false;
     this.canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); this.lost = true; });
     this.canvas.addEventListener('webglcontextrestored', () => { renderer = null; Glass.all.forEach(g => g.invalidate(true)); });
   }
+  /** Готов ли источник к загрузке в текстуру (полностью декодирован). */
+  static ready(src) {
+    if (src instanceof HTMLImageElement) return src.complete && src.naturalWidth > 0;
+    if (src instanceof HTMLVideoElement) return src.readyState >= 2 && src.videoWidth > 0;
+    return (src.width | 0) > 0 && (src.height | 0) > 0;
+  }
   texture(src, live) {
     const gl = this.gl;
+    if (!SharedRenderer.ready(src)) return null;            // не грузим недокачанное изображение
     let t = this.textures.get(src);
+    const ident = src.currentSrc || src.src || '';
     const w = src.videoWidth || src.naturalWidth || src.width, h = src.videoHeight || src.naturalHeight || src.height;
-    if (!w || !h) return null;
-    if (t && !live && t.w === w && t.h === h && !src.__lgDirty) return t;
+    if (t && !live && t.sw === w && t.sh === h && t.ident === ident && !src.__lgDirty) return t;
     if (!t) { t = { tex: gl.createTexture(), w: 0, h: 0 }; this.textures.set(src, t); }
+    // размер: не больше MAX_TEXTURE_SIZE и не больше 2048 (память/скорость на мобильных)
+    const lim = Math.min(this.maxTex, 2048);
+    let up = src, tw = w, th = h;
+    if (w > lim || h > lim) {
+      const k = lim / Math.max(w, h); tw = Math.max(1, Math.round(w * k)); th = Math.max(1, Math.round(h * k));
+      if (!this.scaler) this.scaler = document.createElement('canvas');
+      this.scaler.width = tw; this.scaler.height = th;
+      this.scaler.getContext('2d').drawImage(src, 0, 0, tw, th);
+      up = this.scaler;
+    }
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, t.tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+    gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.BROWSER_DEFAULT_WEBGL);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, up);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    t.w = w; t.h = h; src.__lgDirty = false;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.getError() ? gl.LINEAR : gl.LINEAR_MIPMAP_LINEAR);
+    t.w = tw; t.h = th; t.sw = w; t.sh = h; t.ident = ident; src.__lgDirty = false; t.verified = false;
     return t;
   }
   draw(g, pw, ph, uvRect, tex) {
@@ -263,8 +288,37 @@ class SharedRenderer {
     gl.uniform4f(u.uTint, o.tint[0], o.tint[1], o.tint[2], o.tint[3]);
     gl.uniform2f(u.uLight, o.light[0], o.light[1]);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    // копируем в 2D-канвас элемента (в том же таске — буфер ещё валиден)
-    const ctx = g.ctx2d;
+    // самопроверка (один раз на текстуру): пиксель в центре стекла не должен быть чёрным
+    if (!tex.verified) {
+      tex.verified = true;
+      const px = new Uint8Array(4);
+      gl.readPixels(pw >> 1, ph >> 1, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+      g._glProbe = px[0] + px[1] + px[2];
+      g._glAlpha = px[3];
+    }
+    this.copy(g, pw, ph);
+  }
+  copy(g, pw, ph) {
+    const c = this.canvas, ctx = g.ctx2d;
+    if (this.copyMode === 'pixels') {
+      const gl = this.gl, n = pw * ph * 4;
+      if (!this.buf || this.buf.length < n) this.buf = new Uint8ClampedArray(n);
+      const b = this.buf.subarray(0, n);
+      gl.readPixels(0, 0, pw, ph, gl.RGBA, gl.UNSIGNED_BYTE, b);
+      // переворот по Y + разумножение альфы
+      const img = ctx.createImageData(pw, ph), d = img.data, row = pw * 4;
+      for (let y = 0; y < ph; y++) {
+        const so = (ph - 1 - y) * row, dof = y * row;
+        for (let x = 0; x < row; x += 4) {
+          const a = b[so + x + 3];
+          if (a === 0) { d[dof + x + 3] = 0; continue; }
+          const k = 255 / a;
+          d[dof + x] = b[so + x] * k; d[dof + x + 1] = b[so + x + 1] * k; d[dof + x + 2] = b[so + x + 2] * k; d[dof + x + 3] = a;
+        }
+      }
+      ctx.putImageData(img, 0, 0);
+      return;
+    }
     ctx.globalCompositeOperation = 'copy';
     ctx.drawImage(c, 0, c.height - ph, pw, ph, 0, 0, pw, ph);
   }
@@ -393,7 +447,7 @@ export class Glass {
     this.canvas = cv; this.ctx2d = cv.getContext('2d', { alpha: true });
     if (getComputedStyle(this.el).isolation !== 'isolate') this.el.style.isolation = 'isolate';
     const bg = this.opts.background;
-    if (bg instanceof HTMLImageElement && !bg.complete) bg.addEventListener('load', () => this.invalidate(), { once: true });
+    if (bg instanceof HTMLImageElement) bg.addEventListener('load', () => { bg.__lgDirty = true; this.invalidate(); });
     if (bg instanceof HTMLVideoElement) {
       bg.addEventListener('loadeddata', () => this.invalidate());
       bg.addEventListener('play', () => this.invalidate());
@@ -415,7 +469,7 @@ export class Glass {
     return [sx + u0 * sw, sy + v0 * sh, er.width / br.width * sw, er.height / br.height * sh];
   }
   render() {
-    if (this.mode !== 'webgl' || this.destroyed) return;
+    if (this.mode !== 'webgl' || this.destroyed || !this.canvas) return;
     const d = this.dpr();
     const pw = Math.max(1, Math.round(this.w * d)), ph = Math.max(1, Math.round(this.h * d));
     if (this.canvas.width !== pw || this.canvas.height !== ph) { this.canvas.width = pw; this.canvas.height = ph; }
@@ -424,13 +478,44 @@ export class Glass {
     const tex = r.texture(this.opts.background, this.isLive());
     if (!tex) return;
     const uv = this._uvRect();
+    if (!isFinite(uv[0] + uv[1] + uv[2] + uv[3]) || uv[2] <= 0 || uv[3] <= 0) return;
+    this._glProbe = undefined;
     r.draw(this, pw, ph, uv, tex);
     if (this.opts.adaptive) this._tone(uv);
+    if (this._glProbe !== undefined || !this._copyChecked) this._selfTest(r, pw, ph, uv);
+  }
+  /** Самопроверка: если стекло чёрное, а фон под ним — нет, чиним или откатываемся в CSS. */
+  _selfTest(r, pw, ph, uv) {
+    const bgL = this._bgLuma(uv);
+    if (bgL === null || bgL < 0.08) return;                 // фон и правда тёмный — не судим
+    if (this._glProbe !== undefined && (this._glProbe < 12 || this._glAlpha < 8)) {
+      this._fails = (this._fails || 0) + 1;
+      console.warn('[LiquidGlass] самопроверка: WebGL дал чёрный пиксель (попытка ' + this._fails + ')');
+      if (this._fails >= 2) { Glass.all.forEach(g => g.mode === 'webgl' && g._fallback('css')); return; }
+      this.opts.background.__lgDirty = true; setTimeout(() => this.invalidate(), 100); return;   // перезагрузить текстуру
+    }
+    if (!this._copyChecked && r.copyMode === 'draw') {
+      this._copyChecked = true;
+      try {
+        const p = this.ctx2d.getImageData(pw >> 1, ph >> 1, 1, 1).data;
+        if (p[0] + p[1] + p[2] < 12 || p[3] < 8) {
+          console.warn('[LiquidGlass] drawImage(WebGL→2D) вернул пустоту — переключаюсь на readPixels');
+          r.copyMode = 'pixels'; Glass.all.forEach(g => g.invalidate());
+        }
+      } catch (_) {}
+    }
+  }
+  _bgLuma(uv) {
+    const L = lumaCache.get(this.opts.background); if (!L) { this._tone(uv); }
+    const M = lumaCache.get(this.opts.background); if (!M) return null;
+    const x = clamp((uv[0] + uv[2] / 2) * 32 | 0, 0, 31), y = clamp((uv[1] + uv[3] / 2) * 32 | 0, 0, 31), i = (y * 32 + x) * 4;
+    return (0.2126 * M.d[i] + 0.7152 * M.d[i + 1] + 0.0722 * M.d[i + 2]) / 255;
   }
   /** Адаптивный тон: средняя яркость фона под стеклом (по 32×32-превью источника). */
   _tone(uv) {
     const src = this.opts.background;
     let L = lumaCache.get(src);
+    if (!SharedRenderer.ready(src)) return;
     if (!L || L.dirty !== (src.currentSrc || src.src || 0) || this.isLive()) {
       const c = document.createElement('canvas'); c.width = c.height = 32;
       const x = c.getContext('2d', { willReadFrequently: true });
@@ -447,10 +532,11 @@ export class Glass {
     const tone = sum / n / 255 * this.opts.brightness > 0.62 ? 'light' : 'dark';
     if (this.el.dataset.lgTone !== tone) this.el.dataset.lgTone = tone;
   }
-  _fallback() {
-    this.canvas && this.canvas.remove();
+  _fallback(to) {
+    this.canvas && this.canvas.remove(); this.canvas = null;
+    dirty.delete(this);
     this.el.classList.remove('lg--webgl');
-    this.mode = capabilities().svgBackdrop ? 'svg' : 'css';
+    this.mode = to || (capabilities().svgBackdrop ? 'svg' : 'css');
     this.el.classList.add('lg--' + this.mode); this.el.dataset.lgMode = this.mode;
     this.mode === 'svg' ? this._initSVG() : this._initCSS();
   }
