@@ -1,0 +1,31 @@
+/* Базовые стили LiquidGlass — подключайте вместе с JS */
+.lg {
+  --lg-tint: rgba(255,255,255,.08);
+  position: relative;
+  isolation: isolate;
+  background: var(--lg-tint);
+  border-radius: 999px;
+  overflow: hidden;
+  /* светлая кромка + мягкая тень: работают во всех режимах */
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.28),
+    inset 1.5px 1.5px 1px -0.5px rgba(255,255,255,.65),
+    inset -1px -1px 1px -0.5px rgba(255,255,255,.35),
+    0 6px 24px rgba(0,0,0,.18);
+  -webkit-tap-highlight-color: transparent;
+  transform: translateZ(0);
+}
+.lg--webgl { background: transparent; }
+.lg--webgl::after { content:""; position:absolute; inset:0; border-radius:inherit; background: var(--lg-tint); opacity:.0; pointer-events:none; }
+/* CSS-режим: имитируем блик градиентом, т.к. преломления нет */
+.lg--css::before {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; z-index:-1;
+  background: linear-gradient(135deg, rgba(255,255,255,.35), rgba(255,255,255,0) 40%, rgba(255,255,255,0) 70%, rgba(255,255,255,.18));
+}
+@media (prefers-reduced-transparency: reduce) {
+  .lg { background: rgba(240,240,245,.92) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+}
+
+/* Адаптивный тон (data-lg-tone выставляет JS по яркости фона) */
+.lg[data-lg-tone="light"] { color: #111; text-shadow: none; transition: color .3s; }
+.lg[data-lg-tone="dark"]  { color: #fff; transition: color .3s; }

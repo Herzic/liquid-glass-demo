@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liquid Glass — живой DOM (SVG-режим)</title>
+<link rel="stylesheet" href="../src/liquid-glass.css">
+<style>
+  :root { font-family: -apple-system, system-ui, sans-serif; }
+  body { margin: 0; background: #fafafa; color: #111; }
+  .content { padding: 90px 16px 140px; max-width: 680px; margin: 0 auto; }
+  .stripe { height: 70px; margin: 10px 0; border-radius: 18px; display: flex; align-items: center; padding: 0 18px; font: 700 24px system-ui; color: #fff; }
+  .text { font-size: 20px; line-height: 1.5; }
+  .nav { position: fixed; top: calc(env(safe-area-inset-top) + 10px); left: 12px; right: 12px; height: 54px; border-radius: 27px; z-index: 3;
+         display: flex; align-items: center; padding: 0 20px; font-weight: 700; max-width: 680px; margin: 0 auto; color: #111; }
+  .pill { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 14px); left: 50%; translate: -50% 0; width: min(90vw, 400px); height: 64px; border-radius: 32px; z-index: 3;
+          display: flex; align-items: center; justify-content: space-around; color: #111; font-weight: 600; }
+  .note { font-size: 14px; color: #555; }
+</style>
+</head>
+<body>
+<div class="nav glass">Живой DOM · <span id="mode" style="margin-left:6px;font-weight:500"></span></div>
+<div class="content" id="c"></div>
+<div class="pill glass"><span>Главная</span><span>Поиск</span><span>Ещё</span></div>
+<script type="module">
+  import { liquidGlass } from '../src/liquid-glass.js';
+  const c = document.getElementById('c');
+  const colors = ['#ff3b30','#ff9500','#ffcc00','#34c759','#00c7be','#007aff','#5856d6','#af52de','#ff2d55'];
+  c.innerHTML = `<p class="note">Стекло преломляет настоящую страницу. В Chromium — SVG feDisplacementMap внутри backdrop-filter; в Safari/Firefox — размытие (fallback).</p>` +
+    Array.from({ length: 30 }, (_, i) => i % 3 === 2
+      ? `<p class="text">Абзац ${i}: Съешь же ещё этих мягких французских булок, да выпей чаю. The quick brown fox jumps over the lazy dog.</p>`
+      : `<div class="stripe" style="background:${colors[i % colors.length]}">Полоса ${i}</div>`).join('');
+  const g = liquidGlass('.glass', { bezel: 18, thickness: 22, blur: 0.5, tint: [1,1,1,0.12], aberration: 0.15 });
+  document.getElementById('mode').textContent = g[0].mode;
+  window.__glasses = g;
+</script>
+</body>
+</html>
